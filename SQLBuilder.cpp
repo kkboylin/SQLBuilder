@@ -3,6 +3,17 @@
 #include <assert.h>
 #include "SQLBuilder.h"
 
+#if defined(_MSC_VER)
+	#define	PRI64	"I64"
+	#define	WPRI64	L"I64"
+#elif defined(__MINGW64__) || defined(__x86_64__)
+	#define	PRI64	"l"
+	#define	WPRI64	L"l"
+#else
+	#define	PRI64	"q"
+	#define	WPRI64	L"q"
+#endif
+
 SQLBuilder::SQLBuilder()
 {
 }
@@ -156,26 +167,18 @@ std::string SQLBuilder::Parse(const std::string& sql) const
 	return	Parse( sql.c_str() );
 }
 
-std::string SQLBuilder::Parse(const std::string& value, const Values::const_iterator& it) const
+std::string SQLBuilder::Parse(	const std::string& value,
+								const Values::const_iterator& it) const
 {
 	std::string	result;
+	bool		convert	=	false;
 	char		buffer[64];
 	buffer[0]	=	0;
-	switch( (*it).second.type )
-	{
-		case	E_INT32		:	sprintf_s(buffer, sizeof(buffer), "%d", (*it).second.value.iValue32);		break;
-		case	E_UINT32	:	sprintf_s(buffer, sizeof(buffer), "%u", (*it).second.value.uValue32);		break;
-		case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%I64d", (*it).second.value.iValue64);	break;
-		case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%I64u", (*it).second.value.uValue64);	break;
-		case	E_FLOAT32	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue32);		break;
-		case	E_FLOAT64	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue64);		break;
-	}
-
 	const char*	cur	=	value.c_str();
 	const char*	end	=	&cur[value.size()];
 	while (cur < end)
 	{
-		const char*	now = strstr(cur, (*it).first.c_str());
+		const char*	now	=	strstr(cur, (*it).first.c_str());
 		if (now == NULL)
 		{
 			result	+=	cur;
@@ -189,7 +192,22 @@ std::string SQLBuilder::Parse(const std::string& value, const Values::const_iter
 			result	+=	"'";
 		}
 		else
+		{
+			if (convert == false)
+			{
+				switch( (*it).second.type )
+				{
+					case	E_INT32		:	sprintf_s(buffer, sizeof(buffer), "%d", (*it).second.value.iValue32);			break;
+					case	E_UINT32	:	sprintf_s(buffer, sizeof(buffer), "%u", (*it).second.value.uValue32);			break;
+					case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "d", (*it).second.value.iValue64);	break;
+					case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "u", (*it).second.value.uValue64);	break;
+					case	E_FLOAT32	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue32);			break;
+					case	E_FLOAT64	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue64);			break;
+				}
+				convert	=	true;
+			}
 			result	+=	buffer;
+		}
 		cur	=	now;
 		cur	+=	(*it).first.size();
 	}
@@ -265,8 +283,8 @@ std::string SQLBuilder::CreateWhere(const Values& table) const
 			{
 				case	E_INT32		:	sprintf_s(buffer, sizeof(buffer), "%d", (*it).second.value.iValue32);		break;
 				case	E_UINT32	:	sprintf_s(buffer, sizeof(buffer), "%u", (*it).second.value.uValue32);		break;
-				case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%I64d", (*it).second.value.iValue64);	break;
-				case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%I64u", (*it).second.value.uValue64);	break;
+				case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "d", (*it).second.value.iValue64);	break;
+				case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "u", (*it).second.value.uValue64);	break;
 				case	E_FLOAT32	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue32);		break;
 				case	E_FLOAT64	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue64);		break;
 			}
@@ -329,8 +347,8 @@ std::string SQLBuilder::UpdateSql(const char* table, const char* keys) const
 		{
 			case	E_INT32		:	sprintf_s(buffer, sizeof(buffer), "%d", (*it).second.value.iValue32);		break;
 			case	E_UINT32	:	sprintf_s(buffer, sizeof(buffer), "%u", (*it).second.value.uValue32);		break;
-			case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%I64d", (*it).second.value.iValue64);	break;
-			case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%I64u", (*it).second.value.uValue64);	break;
+			case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "d", (*it).second.value.iValue64);	break;
+			case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "u", (*it).second.value.uValue64);	break;
 			case	E_FLOAT32	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue32);		break;
 			case	E_FLOAT64	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue64);		break;
 		}
@@ -392,8 +410,8 @@ std::string SQLBuilder::InsertReplaceSql(const char* table, const char* keys) co
 		{
 			case	E_INT32		:	sprintf_s(buffer, sizeof(buffer), "%d", (*it).second.value.iValue32);		break;
 			case	E_UINT32	:	sprintf_s(buffer, sizeof(buffer), "%u", (*it).second.value.uValue32);		break;
-			case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%I64d", (*it).second.value.iValue64);	break;
-			case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%I64u", (*it).second.value.uValue64);	break;
+			case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "d", (*it).second.value.iValue64);	break;
+			case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "u", (*it).second.value.uValue64);	break;
 			case	E_FLOAT32	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue32);		break;
 			case	E_FLOAT64	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue64);		break;
 		}
@@ -463,8 +481,8 @@ std::string SQLBuilder::InsertSql(const char* table, bool ignore) const
 		{
 			case	E_INT32		:	sprintf_s(buffer, sizeof(buffer), "%d", (*it).second.value.iValue32);		break;
 			case	E_UINT32	:	sprintf_s(buffer, sizeof(buffer), "%u", (*it).second.value.uValue32);		break;
-			case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%I64d", (*it).second.value.iValue64);	break;
-			case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%I64u", (*it).second.value.uValue64);	break;
+			case	E_INT64		:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "d", (*it).second.value.iValue64);	break;
+			case	E_UINT64	:	sprintf_s(buffer, sizeof(buffer), "%" PRI64 "u", (*it).second.value.uValue64);	break;
 			case	E_FLOAT32	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue32);		break;
 			case	E_FLOAT64	:	sprintf_s(buffer, sizeof(buffer), "%f", (*it).second.value.fValue64);		break;
 		}

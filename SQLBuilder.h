@@ -46,13 +46,13 @@ class SQLBuilder
 		std::string	strValue;
 	};
 
-	/* 長度較長的字串放在前面, 在替換時先替換長度較長的字 */
 	struct less
 	{
-		bool operator()(const std::string& _Left, const std::string& _Right) const
+		bool operator()(const std::string& _Left,
+						const std::string& _Right) const
 		{
 			if (_Left.size() == _Right.size() )
-				return	( strcmp( _Left.c_str(), _Right.c_str() ) < 0 );
+				return	( memcmp( _Left.c_str(), _Right.c_str(), _Left.size() ) < 0 );
 			return	( _Left.size() > _Right.size() );
 		}
 	};
@@ -72,20 +72,21 @@ private	:
 public	:
 	SQLBuilder();
 
-	SQLBuilder& AddParam(const std::string& name, const int32& value)		{	return	AddParamInt32(name, value);		}
-	SQLBuilder& AddParam(const std::string& name, const uint32& value)		{	return	AddParamUInt32(name, value);	}
-	SQLBuilder& AddParam(const std::string& name, const int64& value)		{	return	AddParamInt64(name, value);		}
-	SQLBuilder& AddParam(const std::string& name, const uint64& value)		{	return	AddParamUint64(name, value);	}
-	SQLBuilder& AddParam(const std::string& name, const float64& value)		{	return	AddParamFloat64(name, value);	}
-	SQLBuilder& AddParam(const std::string& name, const float32& value)		{	return	AddParamFloat32(name, value);	}
-	SQLBuilder& AddParam(const std::string& name, const std::string& value)	{	return	AddParamString(name, value);	}
-	SQLBuilder& AddParam(const char* name, const int32& value)				{	return	AddParamInt32(name, value);		}
-	SQLBuilder& AddParam(const char* name, const uint32& value)				{	return	AddParamUInt32(name, value);	}
-	SQLBuilder& AddParam(const char* name, const int64& value)				{	return	AddParamInt64(name, value);		}
-	SQLBuilder& AddParam(const char* name, const uint64& value)				{	return	AddParamUint64(name, value);	}
-	SQLBuilder& AddParam(const char* name, const float64& value)			{	return	AddParamFloat64(name, value);	}
-	SQLBuilder& AddParam(const char* name, const float32& value)			{	return	AddParamFloat32(name, value);	}
-	SQLBuilder& AddParam(const char* name, const std::string& value)		{	return	AddParamString(name, value);	}
+	inline void Reset()																{	_Values.clear();						}
+	inline SQLBuilder& AddParam(const std::string& name, const int32& value)		{	return	AddParamInt32(name, value);		}
+	inline SQLBuilder& AddParam(const std::string& name, const uint32& value)		{	return	AddParamUInt32(name, value);	}
+	inline SQLBuilder& AddParam(const std::string& name, const int64& value)		{	return	AddParamInt64(name, value);		}
+	inline SQLBuilder& AddParam(const std::string& name, const uint64& value)		{	return	AddParamUint64(name, value);	}
+	inline SQLBuilder& AddParam(const std::string& name, const float64& value)		{	return	AddParamFloat64(name, value);	}
+	inline SQLBuilder& AddParam(const std::string& name, const float32& value)		{	return	AddParamFloat32(name, value);	}
+	inline SQLBuilder& AddParam(const std::string& name, const std::string& value)	{	return	AddParamString(name, value);	}
+	inline SQLBuilder& AddParam(const char* name, const int32& value)				{	return	AddParamInt32(name, value);		}
+	inline SQLBuilder& AddParam(const char* name, const uint32& value)				{	return	AddParamUInt32(name, value);	}
+	inline SQLBuilder& AddParam(const char* name, const int64& value)				{	return	AddParamInt64(name, value);		}
+	inline SQLBuilder& AddParam(const char* name, const uint64& value)				{	return	AddParamUint64(name, value);	}
+	inline SQLBuilder& AddParam(const char* name, const float64& value)				{	return	AddParamFloat64(name, value);	}
+	inline SQLBuilder& AddParam(const char* name, const float32& value)				{	return	AddParamFloat32(name, value);	}
+	inline SQLBuilder& AddParam(const char* name, const std::string& value)			{	return	AddParamString(name, value);	}
 
 	SQLBuilder& AddParamInt32(const std::string& name, const int32& value);
 	SQLBuilder& AddParamUInt32(const std::string& name, const uint32& value);
@@ -104,11 +105,6 @@ public	:
 	SQLBuilder& AddParamFloat32(const char* name, const float32& value);
 	SQLBuilder& AddParamString(const char* name, const std::string& value);
 	SQLBuilder& AddParamString(const char* name, const char* value);
-
-	void Reset()
-	{
-		_Values.clear();
-	}
 
 	std::string Parse(const std::string& sql) const;
 	std::string Parse(const char* sql) const;
